@@ -1,0 +1,24 @@
+# Virtual environment
+venv/
+.venv/
+
+# Secrets
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+
+# Tests and coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Databases
+*.db
+
+# Runtime logs (keep the folder)
+logs/*.log

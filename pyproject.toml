@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "utility-assets"
+version = "0.1.0"
+description = "Utility asset registry: command-line ingestion and HTTP service"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi==0.141.1",
+    "uvicorn==0.53.0",
+    "sqlalchemy==2.0.54",
+    "pydantic==2.13.5",
+    "pydantic-settings==2.15.0",
+    "python-jose==3.5.0",
+    "passlib==1.7.4",
+    "bcrypt==4.0.1",
+    "python-multipart==0.0.32",
+    "python-dotenv==1.2.3",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest==9.1.1",
+    "httpx==0.28.1",
+    "pytest-cov==7.1.0",
+]
+
+[project.scripts]
+ingest-assets = "utility_assets.ingestion.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
