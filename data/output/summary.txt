@@ -1,0 +1,14 @@
+Utility asset survey summary
+Run at: 2026-09-16T15:15:59+05:30
+
+Type             Count   Avg condition   Worst asset
+manhole             10            5.20       MH-0307
+pole                20            5.95       PL-0109
+transformer         10            6.20       TR-0406
+valve               12            5.50       VL-0207
+
+Survey extent:
+  latitude  20.2588 to 20.3532
+  longitude 85.7854 to 85.8640
+
+Totals: read 62  accepted 52  rejected 10

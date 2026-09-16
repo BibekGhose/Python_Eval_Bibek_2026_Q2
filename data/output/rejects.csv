@@ -1,0 +1,11 @@
+asset_id,name,asset_type,latitude,longitude,elevation_m,surveyed_on,surveyor,status,condition_score,attribute_json,line_number,reason
+PL-0901,Airport approach pole,pole,102.45,85.8102,12.0,2026-08-29,Rina Das,active,6,"{""height_m"": 9.0, ""material"": ""steel""}",54,latitude: must be a number between -90 and 90
+VL-0902,Museum isolation valve,valve,20.2566,east-of-station,4.0,2026-08-30,Anita Sahu,active,5,"{""bore_mm"": 150, ""material"": ""cast_iron""}",55,longitude: must be a number
+MH-0305,Saheed Nagar chamber 4 retake,manhole,20.2956,85.8447,2.3,2026-08-30,Bikash Mohanty,active,6,"{""depth_m"": 2.5, ""cover"": ""cast_iron""}",56,asset_id: is already in use
+,Nameless chamber near market,manhole,20.2708,85.8418,2.0,2026-08-31,Rina Das,active,4,"{""depth_m"": 2.0, ""cover"": ""concrete""}",57,asset_id: must be present
+pl-0910,Lowercase code pole,pole,20.2733,85.8399,11.2,2026-08-31,Anita Sahu,active,7,"{""height_m"": 8.6, ""material"": ""wood""}",58,"asset_id: must be two capital letters, a hyphen, and four digits"
+TR-0903,Overrated transformer,transformer,20.2880,85.8330,15.0,2026-09-01,Bikash Mohanty,active,14,"{""rating_kva"": 100, ""phase"": 3}",59,condition_score: must be a whole number between 0 and 10
+PL-0904,Unscored feeder pole,pole,20.2844,85.8288,,2026-09-01,JOHN  smith,active,,"{""height_m"": 9.0, ""material"": ""concrete""}",60,condition_score: must be a whole number between 0 and 10
+VL-0905,Future-dated valve,valve,20.3010,85.8355,4.5,2026-11-02,Rina Das,active,8,"{""bore_mm"": 200, ""material"": ""steel""}",61,surveyed_on: must not be later than today
+MH-0906,Broken attributes chamber,manhole,20.3122,85.8220,2.1,2026-09-02,Anita Sahu,active,5,"{depth_m: 2.4,}",62,attribute_json: must be valid JSON
+PL-0907,Unknown kind of asset,substation,20.2740,85.8472,13.0,2026-09-02,Bikash Mohanty,active,6,"{""rating_kva"": 500}",63,"asset_type: must be one of pole, valve, manhole, transformer"
