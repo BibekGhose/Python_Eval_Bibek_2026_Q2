@@ -6,6 +6,7 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from utility_assets.api.assets import router as assets_router
 from utility_assets.api.auth import router as auth_router
 from utility_assets.api.errors import register_error_handlers
 from utility_assets.api.middleware import register_middleware
@@ -51,6 +52,7 @@ def create_app() -> FastAPI:
     app.include_router(status_router)
     app.include_router(auth_router)
     app.include_router(users_router)
+    app.include_router(assets_router)
     register_error_handlers(app)
     register_middleware(app)
     return app

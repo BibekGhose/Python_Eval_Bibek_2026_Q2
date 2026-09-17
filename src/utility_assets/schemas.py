@@ -1,5 +1,8 @@
 """Pydantic shapes for the HTTP API and ingest."""
 
+from datetime import date
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 from utility_assets.models import UserRole
@@ -29,3 +32,26 @@ class UserPublic(BaseModel):
     is_active: bool
 
     model_config = {"from_attributes": True}
+
+
+class AssetPublic(BaseModel):
+    asset_id: str
+    name: str
+    asset_type: str
+    latitude: float
+    longitude: float
+    elevation_m: float | None
+    status: str
+    attributes: dict[str, Any]
+    latest_surveyed_on: date | None
+    latest_surveyor: str | None
+    latest_condition_score: int | None
+
+    model_config = {"from_attributes": True}
+
+
+class AssetListResponse(BaseModel):
+    items: list[AssetPublic]
+    total: int
+    limit: int
+    offset: int
