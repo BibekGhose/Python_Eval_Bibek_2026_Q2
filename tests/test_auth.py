@@ -93,3 +93,82 @@ def test_forged_token_is_401(seeded_session: Session) -> None:
     )
     assert response.status_code == 401
     assert response.json()["error"] == "unauthenticated"
+
+
+def _login(client: TestClient, username: str, password: str) -> str:
+    return client.post(
+        "/auth/login",
+        json={"username": username, "password": password},
+    ).json()["access_token"]
+
+
+def test_administrator_can_create_a_user(seeded_session: Session) -> None:
+    client = _client(seeded_session)
+    token = _login(client, "admin", ADMIN_PASSWORD)
+    response = client.post(
+        "/users",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "username": "surveyor2",
+            "password": "new-user-pass",
+            "role": "surveyor",
+        },
+    )
+    body = response.json()
+    assert response.status_code == 201
+    assert body["username"] == "surveyor2"
+    assert body["role"] == "surveyor"
+    assert "password" not in body
+    assert "password_hash" not in body
+    assert "new-user-pass" not in str(body)
+
+    login = client.post(
+        "/auth/login",
+        json={"username": "surveyor2", "password": "new-user-pass"},
+    )
+    assert login.status_code == 200
+
+
+def test_duplicate_username_is_conflict(seeded_session: Session) -> None:
+    client = _client(seeded_session)
+    token = _login(client, "admin", ADMIN_PASSWORD)
+    response = client.post(
+        "/users",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "username": "surveyor1",
+            "password": "another-pass",
+            "role": "surveyor",
+        },
+    )
+    assert response.status_code == 409
+    assert response.json()["error"] == "conflict"
+
+
+def test_surveyor_cannot_create_a_user(seeded_session: Session) -> None:
+    client = _client(seeded_session)
+    token = _login(client, "surveyor1", SURVEYOR_PASSWORD)
+    response = client.post(
+        "/users",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "username": "surveyor2",
+            "password": "new-user-pass",
+            "role": "surveyor",
+        },
+    )
+    assert response.status_code == 403
+    assert response.json()["error"] == "forbidden"
+
+
+def test_creating_a_user_without_a_token_is_401(seeded_session: Session) -> None:
+    response = _client(seeded_session).post(
+        "/users",
+        json={
+            "username": "surveyor2",
+            "password": "new-user-pass",
+            "role": "surveyor",
+        },
+    )
+    assert response.status_code == 401
+    assert response.json()["error"] == "unauthenticated"

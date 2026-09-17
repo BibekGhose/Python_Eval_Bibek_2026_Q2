@@ -5,9 +5,9 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from utility_assets.api.errors import UnauthenticatedError
+from utility_assets.api.errors import ForbiddenError, UnauthenticatedError
 from utility_assets.db import get_db
-from utility_assets.models import User
+from utility_assets.models import User, UserRole
 from utility_assets.security import InvalidTokenError, decode_access_token
 
 _bearer = HTTPBearer(auto_error=False)
@@ -32,4 +32,10 @@ def get_current_user(
     if user is None or not user.is_active:
         raise UnauthenticatedError("credential is invalid or expired")
     request.state.username = user.username
+    return user
+
+
+def get_current_admin(user: User = Depends(get_current_user)) -> User:
+    if str(user.role) != UserRole.ADMINISTRATOR:
+        raise ForbiddenError("only an administrator may do that")
     return user

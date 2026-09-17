@@ -10,6 +10,7 @@ from utility_assets.api.auth import router as auth_router
 from utility_assets.api.errors import register_error_handlers
 from utility_assets.api.middleware import register_middleware
 from utility_assets.api.status import router as status_router
+from utility_assets.api.users import router as users_router
 from utility_assets.config import get_settings
 from utility_assets.db import init_db
 
@@ -49,6 +50,7 @@ def create_app() -> FastAPI:
     )
     app.include_router(status_router)
     app.include_router(auth_router)
+    app.include_router(users_router)
     register_error_handlers(app)
     register_middleware(app)
     return app
