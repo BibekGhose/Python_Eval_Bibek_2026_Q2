@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from utility_assets.api.assets import router as assets_router
 from utility_assets.api.auth import router as auth_router
 from utility_assets.api.errors import register_error_handlers
+from utility_assets.api.ingest import router as ingest_router
 from utility_assets.api.middleware import register_middleware
 from utility_assets.api.status import router as status_router
 from utility_assets.api.users import router as users_router
@@ -53,6 +54,7 @@ def create_app() -> FastAPI:
     app.include_router(auth_router)
     app.include_router(users_router)
     app.include_router(assets_router)
+    app.include_router(ingest_router)
     register_error_handlers(app)
     register_middleware(app)
     return app
