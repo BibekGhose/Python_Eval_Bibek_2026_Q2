@@ -3,11 +3,12 @@
 from datetime import date
 
 from fastapi.testclient import TestClient
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from utility_assets.api.main import create_app
 from utility_assets.db import get_db
-from utility_assets.models import Asset
+from utility_assets.models import Asset, Visit
 
 from tests.conftest import ADMIN_PASSWORD, SURVEYOR_PASSWORD
 
@@ -143,3 +144,137 @@ def test_get_unknown_asset_returns_404(seeded_session: Session) -> None:
     assert body["error"] == "not_found"
     assert "PL-9999" in body["message"]
     assert "traceback" not in str(body).lower()
+
+
+CREATE_BODY = {
+    "asset_id": "PL-0142",
+    "name": "  north  FEEDER   pole ",
+    "asset_type": "Pole",
+    "latitude": "20.2701 N",
+    "longitude": 85.8402,
+    "elevation_m": None,
+    "surveyed_on": "2026-08-03",
+    "surveyor": "JOHN  smith",
+    "status": "active",
+    "condition_score": 8,
+    "attributes": {"height_m": 9.5},
+}
+
+
+def test_create_asset_returns_201(seeded_session: Session) -> None:
+    client = _client(seeded_session)
+    response = client.post("/assets", headers=_auth(client), json=CREATE_BODY)
+    body = response.json()
+    assert response.status_code == 201
+    assert body["asset_id"] == "PL-0142"
+    assert body["name"] == "North Feeder Pole"
+    assert body["asset_type"] == "pole"
+    assert body["latest_surveyor"] == "John Smith"
+    visits = seeded_session.scalars(select(Visit).where(Visit.asset_id == "PL-0142")).all()
+    assert len(visits) == 1
+
+
+def test_duplicate_create_returns_409_and_leaves_data(seeded_session: Session) -> None:
+    _add_asset(seeded_session, "PL-0142", name="Original Name")
+    client = _client(seeded_session)
+    response = client.post("/assets", headers=_auth(client), json=CREATE_BODY)
+    assert response.status_code == 409
+    assert response.json()["error"] == "conflict"
+    assert seeded_session.get(Asset, "PL-0142").name == "Original Name"
+
+
+def test_put_replaces_asset_and_appends_visit(seeded_session: Session) -> None:
+    client = _client(seeded_session)
+    headers = _auth(client)
+    client.post("/assets", headers=headers, json=CREATE_BODY)
+    replacement = {
+        **CREATE_BODY,
+        "name": "Replaced Pole",
+        "surveyed_on": "2026-09-01",
+        "condition_score": 4,
+    }
+    response = client.put("/assets/PL-0142", headers=headers, json=replacement)
+    assert response.status_code == 200
+    assert response.json()["name"] == "Replaced Pole"
+    assert response.json()["latest_condition_score"] == 4
+    visits = seeded_session.scalars(select(Visit).where(Visit.asset_id == "PL-0142")).all()
+    assert len(visits) == 2
+
+
+def test_patch_name_does_not_append_visit(seeded_session: Session) -> None:
+    client = _client(seeded_session)
+    headers = _auth(client)
+    client.post("/assets", headers=headers, json=CREATE_BODY)
+    response = client.patch(
+        "/assets/PL-0142",
+        headers=headers,
+        json={"name": "Corrected Pole Name"},
+    )
+    assert response.status_code == 200
+    assert response.json()["name"] == "Corrected Pole Name"
+    visits = seeded_session.scalars(select(Visit).where(Visit.asset_id == "PL-0142")).all()
+    assert len(visits) == 1
+
+
+def test_patch_survey_fields_append_a_visit(seeded_session: Session) -> None:
+    client = _client(seeded_session)
+    headers = _auth(client)
+    client.post("/assets", headers=headers, json=CREATE_BODY)
+    response = client.patch(
+        "/assets/PL-0142",
+        headers=headers,
+        json={"condition_score": 3, "surveyed_on": "2026-09-02", "surveyor": "Rina Das"},
+    )
+    assert response.status_code == 200
+    assert response.json()["latest_condition_score"] == 3
+    visits = seeded_session.scalars(select(Visit).where(Visit.asset_id == "PL-0142")).all()
+    assert len(visits) == 2
+
+
+def test_admin_delete_returns_204_and_cascades_visits(seeded_session: Session) -> None:
+    client = _client(seeded_session)
+    surveyor = _auth(client)
+    client.post("/assets", headers=surveyor, json=CREATE_BODY)
+    admin = _auth(client, "admin", ADMIN_PASSWORD)
+    response = client.delete("/assets/PL-0142", headers=admin)
+    assert response.status_code == 204
+    assert seeded_session.get(Asset, "PL-0142") is None
+    assert seeded_session.scalar(select(func.count()).select_from(Visit)) == 0
+
+
+def test_surveyor_cannot_delete(seeded_session: Session) -> None:
+    client = _client(seeded_session)
+    headers = _auth(client)
+    client.post("/assets", headers=headers, json=CREATE_BODY)
+    response = client.delete("/assets/PL-0142", headers=headers)
+    assert response.status_code == 403
+    assert response.json()["error"] == "forbidden"
+    assert seeded_session.get(Asset, "PL-0142") is not None
+
+
+def test_list_visits_for_one_asset(seeded_session: Session) -> None:
+    client = _client(seeded_session)
+    headers = _auth(client)
+    client.post("/assets", headers=headers, json=CREATE_BODY)
+    client.patch(
+        "/assets/PL-0142",
+        headers=headers,
+        json={"condition_score": 3, "surveyed_on": "2026-09-02"},
+    )
+    response = client.get("/assets/PL-0142/visits", headers=headers)
+    assert response.status_code == 200
+    assert response.json()["asset_id"] == "PL-0142"
+    assert len(response.json()["items"]) == 2
+
+
+def test_nearest_asset_uses_haversine(seeded_session: Session) -> None:
+    _add_asset(seeded_session, "PL-0101", latitude=20.2701, longitude=85.8402)
+    _add_asset(seeded_session, "PL-0102", latitude=20.3532, longitude=85.8214)
+    client = _client(seeded_session)
+    response = client.get(
+        "/assets/nearest?latitude=20.2710&longitude=85.8400",
+        headers=_auth(client),
+    )
+    assert response.status_code == 200
+    assert response.json()["asset"]["asset_id"] == "PL-0101"
+    assert "distance_km" in response.json()

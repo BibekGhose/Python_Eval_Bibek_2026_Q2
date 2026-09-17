@@ -17,7 +17,7 @@ from utility_assets.ingestion.writers import (
     write_rejects,
     write_summary,
 )
-from utility_assets.models import Asset, Visit
+from utility_assets.services.assets import save_cleaned_asset
 from utility_assets.validation import clean_and_validate
 
 DEFAULT_REJECTS_PATH = Path("data/output/rejects.csv")
@@ -70,29 +70,7 @@ def required_columns_present(fieldnames: list[str] | None) -> list[str]:
 
 def persist_cleaned(session: Session, cleaned: dict[str, Any]) -> None:
     """Insert a new asset or append a visit when the code is already stored."""
-    asset = session.get(Asset, cleaned["asset_id"])
-    if asset is None:
-        asset = Asset(asset_id=cleaned["asset_id"])
-        session.add(asset)
-    asset.name = cleaned["name"]
-    asset.asset_type = cleaned["asset_type"]
-    asset.latitude = cleaned["latitude"]
-    asset.longitude = cleaned["longitude"]
-    asset.elevation_m = cleaned["elevation_m"]
-    asset.status = cleaned["status"]
-    asset.attributes = cleaned.get("attributes") or {}
-    asset.latest_surveyed_on = cleaned["surveyed_on"]
-    asset.latest_surveyor = cleaned["surveyor"]
-    asset.latest_condition_score = cleaned["condition_score"]
-    session.add(
-        Visit(
-            asset_id=cleaned["asset_id"],
-            surveyed_on=cleaned["surveyed_on"],
-            surveyor=cleaned["surveyor"] or "",
-            condition_score=cleaned["condition_score"],
-            notes=cleaned.get("notes"),
-        )
-    )
+    save_cleaned_asset(session, cleaned, append_visit=True)
 
 
 def ingest_csv(
