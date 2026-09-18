@@ -18,6 +18,7 @@ from utility_assets.ingestion.writers import (
     write_summary,
 )
 from utility_assets.services.assets import save_cleaned_asset
+from utility_assets.services.cache import invalidate_summary_cache
 from utility_assets.validation import clean_and_validate
 
 DEFAULT_REJECTS_PATH = Path("data/output/rejects.csv")
@@ -124,6 +125,7 @@ def ingest_csv(
             result.accepted.append(check.cleaned)
 
         session.commit()
+        invalidate_summary_cache()
     except StrictIngestError:
         session.rollback()
         result.rows_accepted = 0

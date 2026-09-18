@@ -10,6 +10,7 @@ from utility_assets.api.errors import ConflictError, NotFoundError, ValidationFa
 from utility_assets.cleaning import standardise_asset_type, standardise_surveyor
 from utility_assets.geo import nearest_asset
 from utility_assets.models import Asset, Visit
+from utility_assets.services.cache import invalidate_summary_cache
 from utility_assets.validation import clean_and_validate
 
 SURVEY_FIELDS = frozenset({"surveyed_on", "surveyor", "condition_score", "notes"})
@@ -105,6 +106,7 @@ def create_asset(session: Session, raw: dict[str, Any]) -> Asset:
     _raise_if_invalid(check)
     asset = save_cleaned_asset(session, check.cleaned, append_visit=True)
     session.commit()
+    invalidate_summary_cache()
     session.refresh(asset)
     return asset
 
@@ -116,6 +118,7 @@ def replace_asset(session: Session, asset_id: str, raw: dict[str, Any]) -> Asset
     _raise_if_invalid(check)
     asset = save_cleaned_asset(session, check.cleaned, append_visit=True)
     session.commit()
+    invalidate_summary_cache()
     session.refresh(asset)
     return asset
 
@@ -147,6 +150,7 @@ def patch_asset(session: Session, asset_id: str, updates: dict[str, Any]) -> Ass
     append_visit = bool(SURVEY_FIELDS.intersection(updates.keys()))
     asset = save_cleaned_asset(session, check.cleaned, append_visit=append_visit)
     session.commit()
+    invalidate_summary_cache()
     session.refresh(asset)
     return asset
 
@@ -156,6 +160,7 @@ def delete_asset(session: Session, asset_id: str) -> None:
     session.execute(sql_delete(Visit).where(Visit.asset_id == asset_id))
     session.delete(asset)
     session.commit()
+    invalidate_summary_cache()
     session.expire_all()
 
 

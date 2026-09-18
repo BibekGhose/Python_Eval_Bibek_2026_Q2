@@ -1,6 +1,7 @@
 """Shared test setup. Uses a throwaway database and never reads data/app.db."""
 
 import os
+import time
 from collections.abc import Generator
 from pathlib import Path
 
@@ -18,8 +19,19 @@ from utility_assets.config import get_settings
 from utility_assets.db import create_engine_from_url, init_db
 from utility_assets.models import User, UserRole
 from utility_assets.security import hash_password
+from utility_assets.services.cache import summary_cache
 
 get_settings.cache_clear()
+
+
+@pytest.fixture(autouse=True)
+def _reset_summary_cache() -> Generator[None, None, None]:
+    """Each test starts with an empty summary cache and the real clock."""
+    summary_cache.invalidate()
+    summary_cache.clock = time.monotonic
+    yield
+    summary_cache.invalidate()
+    summary_cache.clock = time.monotonic
 
 
 @pytest.fixture

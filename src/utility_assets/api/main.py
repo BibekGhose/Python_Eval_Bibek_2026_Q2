@@ -11,6 +11,7 @@ from utility_assets.api.auth import router as auth_router
 from utility_assets.api.errors import register_error_handlers
 from utility_assets.api.ingest import router as ingest_router
 from utility_assets.api.middleware import register_middleware
+from utility_assets.api.reports import router as reports_router
 from utility_assets.api.status import router as status_router
 from utility_assets.api.users import router as users_router
 from utility_assets.config import get_settings
@@ -49,11 +50,13 @@ def create_app() -> FastAPI:
         allow_credentials=True,
         allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
         allow_headers=["Authorization", "Content-Type"],
+        expose_headers=["X-Cache", "X-Process-Time", "Retry-After"],
     )
     app.include_router(status_router)
     app.include_router(auth_router)
     app.include_router(users_router)
     app.include_router(assets_router)
+    app.include_router(reports_router)
     app.include_router(ingest_router)
     register_error_handlers(app)
     register_middleware(app)

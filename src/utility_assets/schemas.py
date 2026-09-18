@@ -104,3 +104,52 @@ class VisitListResponse(BaseModel):
 class NearestResponse(BaseModel):
     distance_km: float
     asset: AssetPublic
+
+
+class TypeStats(BaseModel):
+    asset_type: str
+    count: int
+    average_condition: float | None
+    worst_asset_id: str | None
+
+
+class GeographicExtent(BaseModel):
+    min_latitude: float
+    max_latitude: float
+    min_longitude: float
+    max_longitude: float
+
+
+class RepairItem(BaseModel):
+    asset_id: str
+    name: str
+    asset_type: str
+    status: str
+    condition_score: int
+    condition_band: str
+
+
+class SummaryResponse(BaseModel):
+    by_type: list[TypeStats]
+    extent: GeographicExtent | None
+    repairs: list[RepairItem]
+    count: int
+
+
+class RepairListResponse(BaseModel):
+    items: list[RepairItem]
+
+
+class FrequentVisitItem(BaseModel):
+    asset_id: str
+    name: str
+    visit_count: int
+
+
+class FrequentVisitResponse(BaseModel):
+    items: list[FrequentVisitItem]
+
+
+class SurveyorsResponse(BaseModel):
+    date: date
+    surveyors: list[str]
